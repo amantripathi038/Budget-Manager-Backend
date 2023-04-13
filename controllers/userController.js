@@ -40,7 +40,7 @@ exports.login = async function (req, res) {
                         name: user.name,
                         email: user.email,
                         contact: user.contact,
-                        expenses: user.expenses
+                        expenses: user.getAllExpenses()
                     },
                     token: token
                 })
@@ -116,6 +116,58 @@ exports.removeExpense = async function (req, res) {
         })
     }
     catch (error) {
+        res.status(404).send({
+            message: "Something went wrong",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.removeMany = async function (req, res) {
+    try {
+        const user = await Users.findById(req.user.id)
+        const idArray = req.body.idArray
+        idArray.forEach(element => {
+            user.removeExpense(element)
+        });
+        user.save()
+        res.status(200).send({
+            message: "Expense removed successfully.",
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact,
+                expenses: await user.getAllExpenses()
+            }
+        })
+    }
+    catch (error) {
+        res.status(404).send({
+            message: "Something went wrong",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.getUser = async function (req, res) {
+    try {
+        const user = await Users.findById(req.user.id)
+        res.status(200).send({
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact,
+                expenses: await user.getAllExpenses()
+            },
+            token: token
+        })
+    } catch (error) {
         res.status(404).send({
             message: "Something went wrong",
             error: {

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
-const Expenses = require("./expenseModel")
+const Expenses = require("./expenseModel");
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, "Please Enter Your Email"],
         unique: true,
+        index: true,
         validate: [validator.isEmail, "Please Enter a valid Email"],
     },
     password: {
@@ -25,7 +26,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         validate: [validator.isNumeric, "Please Enter a valid Contact"],
     },
-    expenses: [{ type: mongoose.Schema.Types.ObjectId }],
+    expenses: [{ type: mongoose.Schema.Types.ObjectId, index: true }],
     resetPasswordToken: String,
     resetPasswordExpire: Date
 })
@@ -81,4 +82,6 @@ userSchema.methods.removeExpense = async function (id) {
     await Expenses.findByIdAndDelete(id)
 }
 
-module.exports = mongoose.model("Users", userSchema);
+const Users = mongoose.model("Users", userSchema);
+Users.ensureIndexes()
+module.exports = Users
