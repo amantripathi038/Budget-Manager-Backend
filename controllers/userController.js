@@ -12,11 +12,12 @@ exports.register = async function (req, res) {
     }
 
     try {
-        const newUser = await Users.create({ email: req.body.email, name: req.body.name, password: req.body.password, contact: req.body.contact })
-        const token = user.getJWTToken()
+        const contact = req.body.contact != null ? req.body.contact : "";
+        const newUser = await Users.create({ email: req.body.email, name: req.body.name, password: req.body.password, contact: contact })
+        const token = newUser.getJWTToken()
         return res.status(200).send({
             message: "Registered Successfully.",
-            user: { email: newUser.email, name: newUser.name, contact: newUser.contact, expenses: newUser.expenses },
+            user: { email: newUser.email, name: newUser.name, contact: newUser.contact || "", expenses: newUser.expenses },
             token: token
         })
     } catch (error) {
@@ -42,8 +43,8 @@ exports.login = async function (req, res) {
                     user: {
                         name: user.name,
                         email: user.email,
-                        contact: user.contact,
-                        expenses: user.getAllExpenses()
+                        contact: user.contact || "",
+                        expenses: await user.getAllExpenses()
                     },
                     token: token
                 })
@@ -87,7 +88,7 @@ exports.addExpense = async function (req, res) {
             user: {
                 name: user.name,
                 email: user.email,
-                contact: user.contact,
+                contact: user.contact || "",
                 expenses: expenses
             }
         })
@@ -113,7 +114,7 @@ exports.removeExpense = async function (req, res) {
             user: {
                 name: user.name,
                 email: user.email,
-                contact: user.contact,
+                contact: user.contact || "",
                 expenses: await user.getAllExpenses()
             }
         })
@@ -142,7 +143,7 @@ exports.removeMany = async function (req, res) {
             user: {
                 name: user.name,
                 email: user.email,
-                contact: user.contact,
+                contact: user.contact || "",
                 expenses: await user.getAllExpenses()
             }
         })
@@ -165,12 +166,67 @@ exports.getUser = async function (req, res) {
             user: {
                 name: user.name,
                 email: user.email,
-                contact: user.contact,
+                contact: user.contact || "",
                 expenses: await user.getAllExpenses()
             },
-            token: token
+            token: req.body.token
         })
     } catch (error) {
+        res.status(404).send({
+            message: "Something went wrong",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.updateProfile = async function (req, res) {
+    try {
+        const user = await Users.findById(req.user.id)
+        user.name = req.body.name
+        user.email = req.body.email
+        user.contact = req.body.contact
+
+        user.save()
+        res.status(200).send({
+            message: "Profile Updated Successfully",
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact || "",
+                expenses: await user.getAllExpenses()
+            }
+        })
+    }
+    catch (error) {
+        res.status(404).send({
+            message: "Something went wrong",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.changePassword = async function (req, res) {
+    try {
+        const user = await Users.findById(req.user.id)
+        const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
+        if (isPasswordMatched) {
+            user.password = req.body.newPassword
+            res.status(201).send({
+                message: "Password Changed Successfully."
+            })
+        } else {
+            res.status(401).send({
+                message: "Incorrect Password"
+            })
+        }
+    }
+    catch (error) {
         res.status(404).send({
             message: "Something went wrong",
             error: {
