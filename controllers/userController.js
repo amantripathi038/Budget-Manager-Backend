@@ -13,9 +13,11 @@ exports.register = async function (req, res) {
 
     try {
         const newUser = await Users.create({ email: req.body.email, name: req.body.name, password: req.body.password, contact: req.body.contact })
+        const token = user.getJWTToken()
         return res.status(200).send({
             message: "Registered Successfully.",
-            user: { email: newUser.email, name: newUser.name, contact: newUser.contact, expenses: newUser.expenses }
+            user: { email: newUser.email, name: newUser.name, contact: newUser.contact, expenses: newUser.expenses },
+            token: token
         })
     } catch (error) {
         return res.status(404).send({
@@ -36,6 +38,7 @@ exports.login = async function (req, res) {
             if (isPasswordMatched) {
                 const token = user.getJWTToken()
                 res.status(200).send({
+                    message: "Logged in.",
                     user: {
                         name: user.name,
                         email: user.email,
