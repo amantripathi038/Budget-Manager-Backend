@@ -23,10 +23,13 @@ const userSchema = new mongoose.Schema({
         minLength: [8, "Password should be greater than 8 characters"]
     },
     contact: {
-        type: Number,
-        validate: [validator.isNumeric, "Please Enter a valid Contact"],
+        type: String,
     },
     expenses: [{ type: mongoose.Schema.Types.ObjectId, index: true }],
+    salary: {
+        type: Number,
+        default: 0
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date
 })
@@ -79,6 +82,8 @@ userSchema.methods.getAllExpenses = async function () {
 
 userSchema.methods.removeExpense = async function (id) {
     this.expenses.remove(id)
+    const exp = await Expenses.findById(id)
+    this.salary += exp.amount || 0
     await Expenses.findByIdAndDelete(id)
 }
 

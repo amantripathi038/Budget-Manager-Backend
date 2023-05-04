@@ -17,7 +17,7 @@ exports.register = async function (req, res) {
         const token = newUser.getJWTToken()
         return res.status(200).send({
             message: "Registered Successfully.",
-            user: { email: newUser.email, name: newUser.name, contact: newUser.contact || "", expenses: newUser.expenses },
+            user: { email: newUser.email, name: newUser.name, contact: newUser.contact || "", expenses: newUser.expenses, salary: newUser.salary },
             token: token
         })
     } catch (error) {
@@ -44,7 +44,8 @@ exports.login = async function (req, res) {
                         name: user.name,
                         email: user.email,
                         contact: user.contact || "",
-                        expenses: await user.getAllExpenses()
+                        expenses: await user.getAllExpenses(),
+                        salary: user.salary
                     },
                     token: token
                 })
@@ -72,26 +73,42 @@ exports.login = async function (req, res) {
 exports.addExpense = async function (req, res) {
     try {
         const user = await Users.findById(req.user.id)
-        const amount = parseInt(req.body.amount)
-        const expense = await Expenses.create({
-            name: req.body.name,
-            category: req.body.category,
-            description: req.body.description,
-            amount: req.body.amount,
-            date: req.body.date
-        })
-        user.expenses.push(expense._id)
-        await user.save()
-        const expenses = await user.getAllExpenses()
-        res.status(200).send({
-            message: "Expense added.",
-            user: {
-                name: user.name,
-                email: user.email,
-                contact: user.contact || "",
-                expenses: expenses
-            }
-        })
+        console.log(parseInt(req.body.amount) > user.salary)
+        if (parseInt(req.body.amount) > user.salary) {
+            res.status(400).send({
+                message: "Insufficient Balance",
+                user: {
+                    name: user.name,
+                    email: user.email,
+                    contact: user.contact || "",
+                    expenses: await user.getAllExpenses(),
+                    salary: user.salary
+                }
+            })
+        }
+        else {
+            const expense = await Expenses.create({
+                name: req.body.name,
+                category: req.body.category,
+                description: req.body.description,
+                amount: req.body.amount,
+                date: req.body.date
+            })
+            user.expenses.push(expense._id)
+            user.salary -= expense.amount
+            await user.save()
+            const expenses = await user.getAllExpenses()
+            res.status(200).send({
+                message: "Expense added.",
+                user: {
+                    name: user.name,
+                    email: user.email,
+                    contact: user.contact || "",
+                    expenses: expenses,
+                    salary: user.salary
+                }
+            })
+        }
     }
     catch (error) {
         res.status(404).send({
@@ -107,15 +124,16 @@ exports.addExpense = async function (req, res) {
 exports.removeExpense = async function (req, res) {
     try {
         const user = await Users.findById(req.user.id)
-        user.removeExpense(req.body.id)
-        user.save()
+        await user.removeExpense(req.body.id)
+        await user.save()
         res.status(200).send({
             message: "Expense removed successfully.",
             user: {
                 name: user.name,
                 email: user.email,
                 contact: user.contact || "",
-                expenses: await user.getAllExpenses()
+                expenses: await user.getAllExpenses(),
+                salary: user.salary
             }
         })
     }
@@ -134,17 +152,24 @@ exports.removeMany = async function (req, res) {
     try {
         const user = await Users.findById(req.user.id)
         const idArray = req.body.idArray
-        idArray.forEach(element => {
-            user.removeExpense(element)
+        var credit = 0
+        for (var i = 0; i < idArray.length; i++) {
+            var exp = await Expenses.findById(idArray[i])
+            credit += exp.amount || 0
+        }
+        user.salary += credit
+        idArray.forEach(async (element) => {
+            await user.removeExpense(element)
         });
-        user.save()
+        await user.save()
         res.status(200).send({
             message: "Expense removed successfully.",
             user: {
                 name: user.name,
                 email: user.email,
                 contact: user.contact || "",
-                expenses: await user.getAllExpenses()
+                expenses: await user.getAllExpenses(),
+                salary: user.salary
             }
         })
     }
@@ -167,7 +192,8 @@ exports.getUser = async function (req, res) {
                 name: user.name,
                 email: user.email,
                 contact: user.contact || "",
-                expenses: await user.getAllExpenses()
+                expenses: await user.getAllExpenses(),
+                salary: user.salary
             },
             token: req.body.token
         })
@@ -187,16 +213,17 @@ exports.updateProfile = async function (req, res) {
         const user = await Users.findById(req.user.id)
         user.name = req.body.name
         user.email = req.body.email
-        user.contact = req.body.contact
-
-        user.save()
+        user.contact = String(req.body.contact)
+        console.log(user.contact)
+        await user.save()
         res.status(200).send({
             message: "Profile Updated Successfully",
             user: {
                 name: user.name,
                 email: user.email,
                 contact: user.contact || "",
-                expenses: await user.getAllExpenses()
+                expenses: await user.getAllExpenses(),
+                salary: user.salary
             }
         })
     }
@@ -217,6 +244,7 @@ exports.changePassword = async function (req, res) {
         const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
         if (isPasswordMatched) {
             user.password = req.body.newPassword
+            await user.save()
             res.status(201).send({
                 message: "Password Changed Successfully."
             })
@@ -225,6 +253,52 @@ exports.changePassword = async function (req, res) {
                 message: "Incorrect Password"
             })
         }
+    }
+    catch (error) {
+        res.status(404).send({
+            message: "Something went wrong",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.creditSalary = async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id)
+        const sal = parseInt(req.body.salary)
+        console.log(sal)
+        if (sal <= 0) {
+            res.status(400).send({
+                message: "Salary must me be positive.",
+                user: {
+                    user: {
+                        name: user.name,
+                        email: user.email,
+                        contact: user.contact || "",
+                        expenses: await user.getAllExpenses(),
+                        salary: user.salary
+                    }
+                }
+            })
+        }
+        else {
+            user.salary += sal
+            await user.save()
+            res.status(200).send({
+                message: "Salary Credited Successfully.",
+                user: {
+                    name: user.name,
+                    email: user.email,
+                    contact: user.contact || "",
+                    expenses: await user.getAllExpenses(),
+                    salary: user.salary
+                }
+            })
+        }
+
     }
     catch (error) {
         res.status(404).send({
