@@ -106,7 +106,8 @@ exports.addExpense = async function (req, res) {
                     contact: user.contact || "",
                     expenses: expenses,
                     salary: user.salary
-                }
+                },
+                token: user.getJWTToken()
             })
         }
     }
@@ -134,7 +135,8 @@ exports.removeExpense = async function (req, res) {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary
-            }
+            },
+            token: user.getJWTToken()
         })
     }
     catch (error) {
@@ -170,7 +172,8 @@ exports.removeMany = async function (req, res) {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary
-            }
+            },
+            token: user.getJWTToken()
         })
     }
     catch (error) {
@@ -224,7 +227,8 @@ exports.updateProfile = async function (req, res) {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary
-            }
+            },
+            token: user.getJWTToken()
         })
     }
     catch (error) {
@@ -295,7 +299,8 @@ exports.creditSalary = async (req, res) => {
                     contact: user.contact || "",
                     expenses: await user.getAllExpenses(),
                     salary: user.salary
-                }
+                },
+                token: user.getJWTToken()
             })
         }
 
@@ -335,7 +340,8 @@ exports.editExpense = async (req, res) => {
                         contact: user.contact || "",
                         expenses: await user.getAllExpenses(),
                         salary: user.salary
-                    }
+                    },
+                    token: user.getJWTToken()
                 })
             }
             else {
