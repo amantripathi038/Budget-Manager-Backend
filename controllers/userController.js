@@ -310,3 +310,59 @@ exports.creditSalary = async (req, res) => {
         })
     }
 }
+
+exports.editExpense = async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id)
+        const expenseId = req.body.expenseId
+        const expense = await Expenses.findById(expenseId)
+        if (expense) {
+            const difference = expense.amount - req.body.amount
+            if (difference >= 0 || user.salary >= -difference) {
+                user.salary += difference
+                expense.name = req.body.name
+                expense.category = req.body.category
+                expense.amount = req.body.amount
+                expense.description = req.body.description
+                expense.date = req.body.date
+                await expense.save()
+                await user.save()
+                res.status(200).send({
+                    message: "Expense edited successfully.",
+                    user: {
+                        name: user.name,
+                        email: user.email,
+                        contact: user.contact || "",
+                        expenses: await user.getAllExpenses(),
+                        salary: user.salary
+                    }
+                })
+            }
+            else {
+                res.status(400).send({
+                    message: "Insufficient credit available.",
+                    user: {
+                        name: user.name,
+                        email: user.email,
+                        contact: user.contact || "",
+                        expenses: await user.getAllExpenses(),
+                        salary: user.salary
+                    }
+                })
+            }
+        } else {
+            res.status(400).send({
+                message: "Expense not found."
+            })
+        }
+    }
+    catch (error) {
+        res.status(400).send({
+            message: "Something went wrong.",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
