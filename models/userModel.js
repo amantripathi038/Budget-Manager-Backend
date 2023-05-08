@@ -3,6 +3,7 @@ const validator = require("validator");
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
 const Expenses = require("./expenseModel");
+const accountSchema = require("./accountModel");
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -30,6 +31,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    accounts: [accountSchema],
     resetPasswordToken: String,
     resetPasswordExpire: Date
 })

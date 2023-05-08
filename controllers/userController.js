@@ -1,5 +1,6 @@
 const Users = require("../models/userModel")
 const Expenses = require("../models/expenseModel")
+const accountSchema = require("../models/accountModel")
 
 exports.register = async function (req, res) {
     const user = await Users.findOne({
@@ -17,7 +18,7 @@ exports.register = async function (req, res) {
         const token = newUser.getJWTToken()
         return res.status(200).send({
             message: "Registered Successfully.",
-            user: { email: newUser.email, name: newUser.name, contact: newUser.contact || "", expenses: newUser.expenses, salary: newUser.salary },
+            user: { email: newUser.email, name: newUser.name, contact: newUser.contact || "", expenses: newUser.expenses, salary: newUser.salary, accounts: newUser.accounts },
             token: token
         })
     } catch (error) {
@@ -45,7 +46,8 @@ exports.login = async function (req, res) {
                         email: user.email,
                         contact: user.contact || "",
                         expenses: await user.getAllExpenses(),
-                        salary: user.salary
+                        salary: user.salary,
+                        accounts: user.accounts
                     },
                     token: token
                 })
@@ -82,7 +84,8 @@ exports.addExpense = async function (req, res) {
                     email: user.email,
                     contact: user.contact || "",
                     expenses: await user.getAllExpenses(),
-                    salary: user.salary
+                    salary: user.salary,
+                    accounts: user.accounts
                 }
             })
         }
@@ -105,7 +108,8 @@ exports.addExpense = async function (req, res) {
                     email: user.email,
                     contact: user.contact || "",
                     expenses: expenses,
-                    salary: user.salary
+                    salary: user.salary,
+                    accounts: user.accounts
                 },
                 token: user.getJWTToken()
             })
@@ -134,7 +138,8 @@ exports.removeExpense = async function (req, res) {
                 email: user.email,
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
-                salary: user.salary
+                salary: user.salary,
+                accounts: user.accounts
             },
             token: user.getJWTToken()
         })
@@ -171,7 +176,8 @@ exports.removeMany = async function (req, res) {
                 email: user.email,
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
-                salary: user.salary
+                salary: user.salary,
+                accounts: user.accounts
             },
             token: user.getJWTToken()
         })
@@ -196,7 +202,8 @@ exports.getUser = async function (req, res) {
                 email: user.email,
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
-                salary: user.salary
+                salary: user.salary,
+                accounts: user.accounts
             },
             token: req.body.token
         })
@@ -226,7 +233,8 @@ exports.updateProfile = async function (req, res) {
                 email: user.email,
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
-                salary: user.salary
+                salary: user.salary,
+                accounts: user.accounts
             },
             token: user.getJWTToken()
         })
@@ -283,7 +291,8 @@ exports.creditSalary = async (req, res) => {
                         email: user.email,
                         contact: user.contact || "",
                         expenses: await user.getAllExpenses(),
-                        salary: user.salary
+                        salary: user.salary,
+                        accounts: user.accounts
                     }
                 }
             })
@@ -298,7 +307,8 @@ exports.creditSalary = async (req, res) => {
                     email: user.email,
                     contact: user.contact || "",
                     expenses: await user.getAllExpenses(),
-                    salary: user.salary
+                    salary: user.salary,
+                    accounts: user.accounts
                 },
                 token: user.getJWTToken()
             })
@@ -339,7 +349,8 @@ exports.editExpense = async (req, res) => {
                         email: user.email,
                         contact: user.contact || "",
                         expenses: await user.getAllExpenses(),
-                        salary: user.salary
+                        salary: user.salary,
+                        accounts: user.accounts
                     },
                     token: user.getJWTToken()
                 })
@@ -352,7 +363,8 @@ exports.editExpense = async (req, res) => {
                         email: user.email,
                         contact: user.contact || "",
                         expenses: await user.getAllExpenses(),
-                        salary: user.salary
+                        salary: user.salary,
+                        accounts: user.accounts
                     }
                 })
             }
@@ -361,6 +373,75 @@ exports.editExpense = async (req, res) => {
                 message: "Expense not found."
             })
         }
+    }
+    catch (error) {
+        res.status(400).send({
+            message: "Something went wrong.",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.addAccount = async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id)
+        const { accountName, accountType, accountBalance, accountNumber } = req.body
+        const newAccount = {
+            accountName: accountName,
+            accountType: accountType,
+            accountBalance: accountBalance,
+            accountNumber: accountNumber
+        }
+        user.accounts.push(newAccount)
+        await user.save()
+
+        res.status(200).send({
+            message: "Account added successfully.",
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact || "",
+                expenses: await user.getAllExpenses(),
+                salary: user.salary,
+                accounts: user.accounts
+            },
+            token: user.getJWTToken()
+        })
+    }
+    catch (error) {
+        res.status(400).send({
+            message: "Something went wrong.",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.deleteAccount = async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id)
+        const account = user.accounts.find(account => String(account._id) === req.body.accountId)
+        if (account) {
+            user.accounts = user.accounts.filter(account => String(account._id) !== req.body.accountId)
+        }
+        await user.save()
+        res.status(200).send({
+            message: 'Account deleted successfully.',
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact || '',
+                expenses: await user.getAllExpenses(),
+                salary: user.salary,
+                accounts: user.accounts
+            },
+            token: user.getJWTToken()
+        })
     }
     catch (error) {
         res.status(400).send({
