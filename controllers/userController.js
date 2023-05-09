@@ -18,7 +18,7 @@ exports.register = async function (req, res) {
         const token = newUser.getJWTToken()
         return res.status(200).send({
             message: "Registered Successfully.",
-            user: { email: newUser.email, name: newUser.name, contact: newUser.contact || "", expenses: newUser.expenses, salary: newUser.salary, accounts: newUser.accounts },
+            user: { email: newUser.email, name: newUser.name, contact: newUser.contact || "", expenses: newUser.expenses, salary: newUser.salary, accounts: newUser.accounts, goals: newUser.goals },
             token: token
         })
     } catch (error) {
@@ -47,7 +47,8 @@ exports.login = async function (req, res) {
                         contact: user.contact || "",
                         expenses: await user.getAllExpenses(),
                         salary: user.salary,
-                        accounts: user.accounts
+                        accounts: user.accounts,
+                        goals: user.goals
                     },
                     token: token
                 })
@@ -79,14 +80,6 @@ exports.addExpense = async function (req, res) {
         if (parseInt(req.body.amount) > user.salary) {
             res.status(400).send({
                 message: "Insufficient Balance",
-                user: {
-                    name: user.name,
-                    email: user.email,
-                    contact: user.contact || "",
-                    expenses: await user.getAllExpenses(),
-                    salary: user.salary,
-                    accounts: user.accounts
-                }
             })
         }
         else {
@@ -109,7 +102,8 @@ exports.addExpense = async function (req, res) {
                     contact: user.contact || "",
                     expenses: expenses,
                     salary: user.salary,
-                    accounts: user.accounts
+                    accounts: user.accounts,
+                    goals: user.goals
                 },
                 token: user.getJWTToken()
             })
@@ -139,7 +133,8 @@ exports.removeExpense = async function (req, res) {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary,
-                accounts: user.accounts
+                accounts: user.accounts,
+                goals: user.goals
             },
             token: user.getJWTToken()
         })
@@ -177,7 +172,8 @@ exports.removeMany = async function (req, res) {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary,
-                accounts: user.accounts
+                accounts: user.accounts,
+                goals: user.goals
             },
             token: user.getJWTToken()
         })
@@ -203,7 +199,8 @@ exports.getUser = async function (req, res) {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary,
-                accounts: user.accounts
+                accounts: user.accounts,
+                goals: user.goals
             },
             token: req.body.token
         })
@@ -234,7 +231,8 @@ exports.updateProfile = async function (req, res) {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary,
-                accounts: user.accounts
+                accounts: user.accounts,
+                goals: user.goals
             },
             token: user.getJWTToken()
         })
@@ -285,16 +283,6 @@ exports.creditSalary = async (req, res) => {
         if (sal <= 0) {
             res.status(400).send({
                 message: "Salary must me be positive.",
-                user: {
-                    user: {
-                        name: user.name,
-                        email: user.email,
-                        contact: user.contact || "",
-                        expenses: await user.getAllExpenses(),
-                        salary: user.salary,
-                        accounts: user.accounts
-                    }
-                }
             })
         }
         else {
@@ -308,7 +296,8 @@ exports.creditSalary = async (req, res) => {
                     contact: user.contact || "",
                     expenses: await user.getAllExpenses(),
                     salary: user.salary,
-                    accounts: user.accounts
+                    accounts: user.accounts,
+                    goals: user.goals
                 },
                 token: user.getJWTToken()
             })
@@ -350,22 +339,15 @@ exports.editExpense = async (req, res) => {
                         contact: user.contact || "",
                         expenses: await user.getAllExpenses(),
                         salary: user.salary,
-                        accounts: user.accounts
+                        accounts: user.accounts,
+                        goals: user.goals
                     },
                     token: user.getJWTToken()
                 })
             }
             else {
                 res.status(400).send({
-                    message: "Insufficient credit available.",
-                    user: {
-                        name: user.name,
-                        email: user.email,
-                        contact: user.contact || "",
-                        expenses: await user.getAllExpenses(),
-                        salary: user.salary,
-                        accounts: user.accounts
-                    }
+                    message: "Insufficient credit available."
                 })
             }
         } else {
@@ -406,7 +388,8 @@ exports.addAccount = async (req, res) => {
                 contact: user.contact || "",
                 expenses: await user.getAllExpenses(),
                 salary: user.salary,
-                accounts: user.accounts
+                accounts: user.accounts,
+                goals: user.goals
             },
             token: user.getJWTToken()
         })
@@ -438,7 +421,119 @@ exports.deleteAccount = async (req, res) => {
                 contact: user.contact || '',
                 expenses: await user.getAllExpenses(),
                 salary: user.salary,
-                accounts: user.accounts
+                accounts: user.accounts,
+                goals: user.goals
+            },
+            token: user.getJWTToken()
+        })
+    }
+    catch (error) {
+        res.status(400).send({
+            message: "Something went wrong.",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.addGoal = async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id)
+        const { goalName, targetAmount, savedAmount, desiredDate } = req.body
+        const newGoal = {
+            goalName: goalName,
+            targetAmount: targetAmount,
+            savedAmount: savedAmount,
+            desiredDate: desiredDate
+        }
+        user.goals.push(newGoal)
+        await user.save()
+        res.status(200).send({
+            message: "Goal added successfully.",
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact || "",
+                expenses: await user.getAllExpenses(),
+                salary: user.salary,
+                accounts: user.accounts,
+                goals: user.goals
+            },
+            token: user.getJWTToken()
+        })
+    }
+    catch (error) {
+        res.status(400).send({
+            message: error.message,
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.changeGoalStatus = async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id)
+        const goal = user.goals.find(goal => String(goal._id) === req.body.goalId)
+        const message = req.body.status === 'delete' ? "Goal deleted successfully" : "Goal status changed successfully"
+        if (goal) {
+            if (req.body.status === 'delete') user.goals = user.goals.filter(goal => String(goal._id) !== req.body.goalId)
+            else if (req.body.status === 'pause') {
+                goal.goalStatus = "paused"
+            }
+            else if (req.body.status === 'complete') {
+                goal.goalStatus = "completed"
+            }
+            else if (req.body.status === 'active') {
+                goal.goalStatus = 'active'
+            }
+        }
+        await user.save()
+        res.status(200).send({
+            message: message,
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact || '',
+                expenses: await user.getAllExpenses(),
+                salary: user.salary,
+                accounts: user.accounts,
+                goals: user.goals
+            },
+            token: user.getJWTToken()
+        })
+    }
+    catch (error) {
+        res.status(400).send({
+            message: "Something went wrong.",
+            error: {
+                name: error.name,
+                message: error.message
+            }
+        })
+    }
+}
+
+exports.addSavedAmount = async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id)
+        const goal = user.goals.find(goal => String(goal._id) === req.body.goalId)
+        goal.savedAmount += parseInt(req.body.amount)
+        await user.save()
+        res.status(200).send({
+            message: "Amount added successfully",
+            user: {
+                name: user.name,
+                email: user.email,
+                contact: user.contact || '',
+                expenses: await user.getAllExpenses(),
+                salary: user.salary,
+                accounts: user.accounts,
+                goals: user.goals
             },
             token: user.getJWTToken()
         })

@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
 const Expenses = require("./expenseModel");
 const accountSchema = require("./accountModel");
+const goalSchema = require("./goalModel")
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -32,6 +33,7 @@ const userSchema = new mongoose.Schema({
         default: 0
     },
     accounts: [accountSchema],
+    goals: [goalSchema],
     resetPasswordToken: String,
     resetPasswordExpire: Date
 })

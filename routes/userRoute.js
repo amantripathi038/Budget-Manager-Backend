@@ -1,5 +1,5 @@
 const express = require("express")
-const { register, login, addExpense, removeExpense, getUser, removeMany, updateProfile, changePassword, creditSalary, editExpense, addAccount, deleteAccount } = require("../controllers/userController")
+const { register, login, addExpense, removeExpense, getUser, removeMany, updateProfile, changePassword, creditSalary, editExpense, addAccount, deleteAccount, addGoal, changeGoalStatus, addSavedAmount } = require("../controllers/userController")
 const { isAuthenticatedUser } = require("../middleware/auth")
 
 const router = express.Router()
@@ -27,4 +27,10 @@ router.route('/editExpense').post(isAuthenticatedUser, editExpense)
 router.route('/addAccount').post(isAuthenticatedUser, addAccount)
 
 router.route('/deleteAccount').post(isAuthenticatedUser, deleteAccount)
+
+router.route('/addGoal').post(isAuthenticatedUser, addGoal)
+
+router.route('/changeGoalStatus').post(isAuthenticatedUser, changeGoalStatus)
+
+router.route('/addSavedAmount').post(isAuthenticatedUser, addSavedAmount)
 module.exports = router;
