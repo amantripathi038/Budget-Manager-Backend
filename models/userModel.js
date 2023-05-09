@@ -79,6 +79,11 @@ userSchema.methods.getAllExpenses = async function () {
     for (var i = 0; i < this.expenses.length; i++) {
         expense.push(await Expenses.findById(this.expenses[i]))
     }
+    await expense.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA;
+    })
     return expense
 }
 
