@@ -279,14 +279,14 @@ exports.creditSalary = async (req, res) => {
         const sal = parseInt(req.body.salary)
         if (sal <= 0) {
             res.status(400).send({
-                message: "Salary must me be positive.",
+                message: "Amount must me be positive.",
             })
         }
         else {
             user.salary += sal
             await user.save()
             res.status(200).send({
-                message: "Salary Credited Successfully.",
+                message: "Amount Added Successfully.",
                 user: {
                     name: user.name,
                     email: user.email,
