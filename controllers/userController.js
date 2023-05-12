@@ -76,7 +76,6 @@ exports.login = async function (req, res) {
 exports.addExpense = async function (req, res) {
     try {
         const user = await Users.findById(req.user.id)
-        console.log(parseInt(req.body.amount) > user.salary)
         if (parseInt(req.body.amount) > user.salary) {
             res.status(400).send({
                 message: "Insufficient Balance",
@@ -221,7 +220,6 @@ exports.updateProfile = async function (req, res) {
         user.name = req.body.name
         user.email = req.body.email
         user.contact = String(req.body.contact)
-        console.log(user.contact)
         await user.save()
         res.status(200).send({
             message: "Profile Updated Successfully",
@@ -279,7 +277,6 @@ exports.creditSalary = async (req, res) => {
     try {
         const user = await Users.findById(req.user.id)
         const sal = parseInt(req.body.salary)
-        console.log(sal)
         if (sal <= 0) {
             res.status(400).send({
                 message: "Salary must me be positive.",
@@ -375,11 +372,10 @@ exports.addAccount = async (req, res) => {
             accountName: accountName,
             accountType: accountType,
             accountBalance: accountBalance,
-            accountNumber: accountNumber
+            accountNumber: accountNumber || "N/A"
         }
         user.accounts.push(newAccount)
         await user.save()
-
         res.status(200).send({
             message: "Account added successfully.",
             user: {
