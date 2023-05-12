@@ -9,11 +9,11 @@ const accountSchema = new mongoose.Schema({
     },
     accountNumber: {
         type: Number,
-        required: true,
+        default: 0,
         validate: {
             validator: function (value) {
                 // Custom validation function to check for positive integers
-                return Number.isInteger(value) && value > 0;
+                return Number.isInteger(value);
             },
             message: "Account number must be a positive integer"
         }
